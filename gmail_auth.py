@@ -38,6 +38,8 @@ def gmail_authenticate():
     return service
 
 
+
+
 # Sample usage:
 if __name__ == '__main__':
     service = gmail_authenticate()

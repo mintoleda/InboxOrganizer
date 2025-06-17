@@ -50,6 +50,35 @@ def get_body_from_parts(payload):
 
     return '(No readable content)'
 
+def apply_label_to_email(service, msg_id, label_id):
+    service.users().messages().modify(
+        userId='me',
+        id=msg_id,
+        body={
+            'addLabelIds': [label_id],
+            'removeLabelIds': ['INBOX']  # Optional: remove from inbox
+        }
+    ).execute()
+
+
+def get_or_create_label_id(service, label_name):
+    """Returns the label ID for a given name, creating it if necessary"""
+    results = service.users().labels().list(userId='me').execute()
+    labels = results.get('labels', [])
+
+    for label in labels:
+        if label['name'].lower() == label_name.lower():
+            return label['id']
+
+    # Create label if it doesn't exist
+    label_object = {
+        "name": label_name,
+        "labelListVisibility": "labelShow",
+        "messageListVisibility": "show"
+    }
+    new_label = service.users().labels().create(userId='me', body=label_object).execute()
+    return new_label['id']
+
 
 if __name__ == '__main__':
     service = gmail_authenticate()
@@ -61,9 +90,19 @@ if __name__ == '__main__':
         print(f"Found {len(unread)} unread messages:\n")
 
         for msg in unread:
+            print("Retrieving email content...")
             email = get_email_content(service, msg['id'])
+            print("Classifying email...")
             label = classify_email_with_gemma(email['subject'], email['body'], email['sender'])
-            print("Subject:", email['subject'])
-            print("From:", email['sender'])
-            print("Suggested Label:", label)
+            print("🔹 Subject:", email['subject'])
+            print("👤 From:", email['sender'])
+            print("🏷️ Suggested Label:", label)
             print("\n")
+
+            # Get/create the label in Gmail
+            label_id = get_or_create_label_id(service, label)
+
+            # Apply it to the message
+            apply_label_to_email(service, email['id'], label_id)
+
+            print("✅ Label applied!\n" + "-" * 40)
