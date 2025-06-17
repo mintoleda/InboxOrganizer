@@ -90,6 +90,23 @@ if __name__ == '__main__':
         print(f"Found {len(unread)} unread messages:\n")
 
         for msg in unread:
+            # Get full message details (including labels)
+            message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
+
+            existing_labels = message.get('labelIds', [])
+
+            # Define the AI labels you want to check for (case-insensitive)
+            ai_labels = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Programming"]  # Example labels you expect from your classifier
+            ai_label_ids = []
+
+            # Get the label IDs for the AI labels (you can do this once outside the loop for efficiency)
+            # For demo, just retrieve all labels once, outside this loop (see next step)
+
+            # If any AI label ID is already in existing_labels, skip
+            if any(label_id in existing_labels for label_id in ai_label_ids):
+                print(f"Skipping message {msg['id']} - already labeled")
+                continue
+
             print("Retrieving email content...")
             email = get_email_content(service, msg['id'])
             print("Classifying email...")
