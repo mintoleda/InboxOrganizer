@@ -3,13 +3,9 @@ import base64
 import re
 from bs4 import BeautifulSoup  # Optional, for cleaning HTML
 from googleapiclient.errors import HttpError
-from email_classifier import classify_email
+from gemma_wrapper import classify_email_with_gemma
 
-
-# If you don't have it yet:
-# pip install beautifulsoup4
-
-def get_unread_messages(service, max_results=5):
+def get_unread_messages(service, max_results=10):
     try:
         response = service.users().messages().list(userId='me', q='is:unread', maxResults=max_results).execute()
         return response.get('messages', [])
@@ -26,10 +22,13 @@ def get_email_content(service, msg_id):
 
     body = get_body_from_parts(message['payload'])
 
+    sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), '(No Sender)')
+
     return {
         'id': msg_id,
         'subject': subject,
-        'body': body
+        'body': body,
+        'sender': sender
     }
 
 
@@ -56,7 +55,6 @@ if __name__ == '__main__':
     service = gmail_authenticate()
     unread = get_unread_messages(service)
 
-
     if not unread:
         print("No unread messages found.")
     else:
@@ -64,6 +62,8 @@ if __name__ == '__main__':
 
         for msg in unread:
             email = get_email_content(service, msg['id'])
-            label = classify_email(email['subject'], email['body'])
-            print("🔹 Subject:", email['subject'])
-            print("🏷️ Suggested Label:", label)
+            label = classify_email_with_gemma(email['subject'], email['body'], email['sender'])
+            print("Subject:", email['subject'])
+            print("From:", email['sender'])
+            print("Suggested Label:", label)
+            print("\n")
