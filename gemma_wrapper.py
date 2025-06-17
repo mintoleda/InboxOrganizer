@@ -14,13 +14,13 @@ If the email does not fit any of these categories, return "Uncategorized".
 
 Sender: {sender}
 Subject: {subject}
-Body: {body[:3000]}
+Body: {body[:250]}
 
 Return only the category name.
 """
 
     try:
-        response = client.generate(model="gemma3:1b", prompt=prompt)
+        response = client.generate(model="mistral:7b", prompt=prompt)
         label = response["response"].strip()
         label = re.sub(r"[^a-zA-Z]", "", label).capitalize()
 
