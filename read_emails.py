@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup  # Optional, for cleaning HTML
 from googleapiclient.errors import HttpError
 from gemma_wrapper import classify_email_with_gemma
 
-def get_unread_messages(service, max_results=10):
+def get_unread_messages(service, max_results=1):
     try:
         response = service.users().messages().list(userId='me', q='is:unread', maxResults=max_results).execute()
         return response.get('messages', [])
