@@ -15,32 +15,29 @@ SCOPES = [
 def gmail_authenticate():
     creds = None
 
-    # Check if token.json already exists
+    # check if token already exists
     if os.path.exists('token.json'):
         from google.oauth2.credentials import Credentials
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
-    # If no valid credentials available, let user log in
+    # let user log in
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # Load credentials.json you downloaded
+            # load credentials.json downloaded
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
 
-        # Save the credentials for next run
+        # save credentials for next run
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 
-    # Build the Gmail service
+    # build Gmail service
     service = build('gmail', 'v1', credentials=creds)
     return service
 
 
-
-
-# Sample usage:
 if __name__ == '__main__':
     service = gmail_authenticate()
     profile = service.users().getProfile(userId='me').execute()
