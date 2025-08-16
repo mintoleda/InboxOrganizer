@@ -1,7 +1,7 @@
 from gmail_auth import gmail_authenticate
 import base64
 import re
-from bs4 import BeautifulSoup  # Optional, for cleaning HTML
+from bs4 import BeautifulSoup
 from googleapiclient.errors import HttpError
 from gemma_wrapper import classify_email_with_gemma
 
@@ -56,7 +56,7 @@ def apply_label_to_email(service, msg_id, label_id):
         id=msg_id,
         body={
             'addLabelIds': [label_id],
-            'removeLabelIds': ['INBOX']  # Optional: remove from inbox
+            'removeLabelIds': ['INBOX']
         }
     ).execute()
 
@@ -70,7 +70,7 @@ def get_or_create_label_id(service, label_name):
         if label['name'].lower() == label_name.lower():
             return label['id']
 
-    # Create label if it doesn't exist
+    # Create label if doesn't exist
     label_object = {
         "name": label_name,
         "labelListVisibility": "labelShow",
@@ -96,11 +96,10 @@ if __name__ == '__main__':
             existing_labels = message.get('labelIds', [])
 
             # Define the AI labels you want to check for (case-insensitive)
-            ai_labels = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Programming"]  # Example labels you expect from your classifier
+            ai_labels = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Programming"] # Example labels; change at your own whim
             ai_label_ids = []
 
-            # Get the label IDs for the AI labels (you can do this once outside the loop for efficiency)
-            # For demo, just retrieve all labels once, outside this loop (see next step)
+            # Get the label IDs for the AI labels
 
             # If any AI label ID is already in existing_labels, skip
             if any(label_id in existing_labels for label_id in ai_label_ids):
@@ -119,7 +118,6 @@ if __name__ == '__main__':
             # Get/create the label in Gmail
             label_id = get_or_create_label_id(service, label)
 
-            # Apply it to the message
             apply_label_to_email(service, email['id'], label_id)
 
             print("✅ Label applied!\n" + "-" * 40)
