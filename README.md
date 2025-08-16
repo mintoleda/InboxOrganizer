@@ -15,7 +15,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 - Customizable categories (see gemma_wrapper.py)
 - Runs fully locally (no external LLM API required)
 
-## Tech stack
+## Tools used
 
 - Python
 - Gmail API (google-auth, google-auth-oauthlib, google-api-python-client)
@@ -54,7 +54,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
    ```bash
    ollama pull mistral
    ```
-  - You can use any model you'd like as long as you make sure to edit gemma_wrapper.py
+  - You can use any model you'd like as long as you make sure to edit `gemma_wrapper.py`
 4. (Optional) Test that the model runs:
    ```bash
    ollama run mistral "Classify this email about a bank statement."
@@ -62,7 +62,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 
 ### 3) Set up the Python environment
 
-- Requires Python 3.10+ (recommended)
+- Requires Python 3.10+
 
 Clone the repository:
 ```bash
@@ -93,7 +93,7 @@ export OLLAMA_HOST=http://127.0.0.1:11434
 ## First run and OAuth flow
 
 - On the first run, the app will detect `credentials.json` and start a local OAuth flow:
-  - After you approve, the app *locally* stores a `token.json` file *locally* for future runs.
+  - After you approve, the app *locally* stores a `token.json` file for future runs.
 
 If you ever need to re-authenticate, delete `token.json` and run the app again.
 
