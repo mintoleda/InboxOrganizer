@@ -12,7 +12,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 - Reads messages for classification
 - AI-powered email classification using a local LLM, which, by default, is Mistral 7B with Ollama
 - Creates labels if missing and applies them
-- Customizable categories (see gemma_wrapper.py)
+- Customizable categories (see [gemma_wrapper.py](https://github.com/mintoleda/InboxOrganizer/blob/main/README.md#customizing-categories))
 - Runs fully locally (no external LLM API required)
 
 ## Tools used
