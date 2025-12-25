@@ -45,7 +45,6 @@ Return ONLY a comma-separated list of category names (e.g., "Travel, Shopping, N
         categories = []
         for cat in raw_categories:
             cleaned = re.sub(r"[^a-zA-Z0-9 ]", "", cat).strip().title()
-            # Only accept 1-2 word category names to filter out LLM rambling
             if cleaned and len(cleaned.split()) <= 2:
                 categories.append(cleaned)
         return categories[:5]
@@ -65,7 +64,7 @@ If the email does not fit any of these categories, return "Uncategorized".
 
 Sender: {sender}
 Subject: {subject}
-Body: {body[:250]}
+Body: {body[:500]}
 
 Return only the category name.
 """
