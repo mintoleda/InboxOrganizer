@@ -8,14 +8,10 @@ CATEGORIES = ["Work", "Finance", "Promotions", "Spam", "Github", "Programming"]
 
 
 def suggest_new_categories(email_samples: list[dict]) -> list[str]:
-    """
-    Analyzes email samples and suggests up to 5 new category names.
-    Returns an empty list if no new categories are needed.
-    """
     if not email_samples:
         return []
 
-    # Build a summary of emails for the prompt
+
     email_summaries = []
     for i, email in enumerate(email_samples[:50], 1):
         summary = f"{i}. From: {email.get('sender', 'Unknown')} | Subject: {email.get('subject', '(No Subject)')}"
@@ -45,9 +41,7 @@ Return ONLY a comma-separated list of category names (e.g., "Travel, Shopping, N
         if result.upper() == "NONE" or not result:
             return []
 
-        # Parse comma-separated categories
         categories = [cat.strip() for cat in result.split(",")]
-        # Clean up and limit to 5
         categories = [re.sub(r"[^a-zA-Z0-9 ]", "", cat).strip().title() for cat in categories if cat.strip()]
         return categories[:5]
 

@@ -8,16 +8,14 @@ import argparse
 
 
 def get_user_label_ids(service):
-    """Returns a set of user-created label IDs (excludes system labels)"""
     results = service.users().labels().list(userId='me').execute()
     labels = results.get('labels', [])
-    # System labels have type 'system', user labels have type 'user'
+
     user_label_ids = {label['id'] for label in labels if label.get('type') == 'user'}
     return user_label_ids
 
 
 def get_unread_untagged_messages(service, max_results=50):
-    """Returns unread messages that don't have any user-created labels"""
     try:
         response = service.users().messages().list(userId='me', q='is:unread', maxResults=max_results).execute()
         messages = response.get('messages', [])
@@ -32,7 +30,7 @@ def get_unread_untagged_messages(service, max_results=50):
             message = service.users().messages().get(userId='me', id=msg['id'], format='metadata', metadataHeaders=['From', 'Subject']).execute()
             existing_labels = set(message.get('labelIds', []))
             
-            # Check if message has any user labels
+
             if not existing_labels.intersection(user_label_ids):
                 headers = message['payload'].get('headers', [])
                 subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
@@ -77,7 +75,6 @@ def get_email_content(service, msg_id):
 
 
 def get_body_from_parts(payload):
-    """Recursively extracts plain text from payload parts"""
     if 'parts' in payload:
         for part in payload['parts']:
             result = get_body_from_parts(part)
@@ -106,7 +103,6 @@ def apply_label_to_email(service, msg_id, label_id):
 
 
 def get_or_create_label_id(service, label_name):
-    """Returns the label ID for a given name, creating it if necessary"""
     results = service.users().labels().list(userId='me').execute()
     labels = results.get('labels', [])
 
@@ -114,7 +110,7 @@ def get_or_create_label_id(service, label_name):
         if label['name'].lower() == label_name.lower():
             return label['id']
 
-    # Create label if doesn't exist
+
     label_object = {
         "name": label_name,
         "labelListVisibility": "labelShow",
@@ -133,7 +129,7 @@ if __name__ == '__main__':
 
     service = gmail_authenticate()
 
-    # Handle category recommendation mode
+
     if args.recommend:
         print("🔍 Analyzing unread, untagged emails for category recommendations...")
         untagged = get_unread_untagged_messages(service, max_results=50)
@@ -154,7 +150,7 @@ if __name__ == '__main__':
                 print(f"\n📝 To add these, edit the CATEGORIES list in model_wrapper.py")
         exit(0)
 
-    # Regular classification mode
+
     unread = get_unread_messages(service, max_results=args.check)
 
     if not unread:
@@ -170,12 +166,12 @@ if __name__ == '__main__':
                 print(f"Reached classification limit of {args.classify}. Stopping.")
                 break
 
-            # Get full message details (including labels)
+
             message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
 
             existing_labels = set(message.get('labelIds', []))
 
-            # Skip if message already has any user-created label
+
             if existing_labels.intersection(user_label_ids):
                 print(f"Skipping message {msg['id']} - already labeled")
                 continue
@@ -189,7 +185,7 @@ if __name__ == '__main__':
             print("🏷️ Suggested Label:", label)
             print("\n")
 
-            # Get/create the label in Gmail
+
             label_id = get_or_create_label_id(service, label)
 
             apply_label_to_email(service, email['id'], label_id)
