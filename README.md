@@ -4,7 +4,7 @@ Label emails through Gmail with AI
 
 ## What it does
 
-This connects to your Gmail inbox, reads your unread emails, and automatically applies labels (that you can choose) based on the subject and other factors. It uses Google's Gmail API and an LLM running with Ollama to classify each message. Labels are created if they don’t already exist.
+This connects to your Gmail inbox, reads your unread emails, and automatically applies labels (that you can choose) based on the subject and other factors. It uses Google's Gmail API and an LLM running with Ollama to classify each message. Labels are created if they don't already exist.
 
 ### Features
 
@@ -12,8 +12,10 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 - Reads messages for classification
 - AI-powered email classification using a local LLM, which, by default, is Llama 3.1 8B with Ollama
 - Creates labels if missing and applies them
+- Category recommendations: Analyze your untagged emails and get AI-suggested new categories
 - Customizable categories (see [model_wrapper.py](https://github.com/mintoleda/InboxOrganizer/blob/main/README.md#customizing-categories))
 - Runs fully locally (no external LLM API required)
+- Docker support for easy deployment
 
 ## Tools used
 
@@ -22,6 +24,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 - Ollama
 - Llama 3.1 8B (default)
 - BeautifulSoup (HTML parsing)
+- Docker (optional)
 
 ## How it works
 
@@ -39,10 +42,10 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 1. Go to Google Cloud Console and create a project.
 2. Enable the Gmail API for that project.
 3. Configure OAuth consent screen:
-   - User Type: “External”
+   - User Type: "External"
    - Add scopes as needed (probably needs `.../auth/gmail.modify`)
 4. Create OAuth 2.0 Client ID:
-   - Application type: “Desktop app”
+   - Application type: "Desktop app"
    - Download the client credentials JSON.
 5. Save the file as `credentials.json` in the project's root directory.
 
@@ -80,10 +83,9 @@ source .venv/bin/activate
 ```
 
 Install dependencies:
-- 
-  ```bash
-  pip install google-api-python-client google-auth google-auth-oauthlib beautifulsoup4 ollama
-  ```
+```bash
+pip install -r requirements.txt
+```
 
 Note: The app expects Ollama to be running locally at `http://localhost:11434`. If you run Ollama elsewhere, set `OLLAMA_HOST` accordingly, e.g.:
 ```bash
@@ -99,30 +101,68 @@ If you ever need to re-authenticate, delete `token.json` and run the app again.
 
 ## Running the app
 
-Run the classifier:
+### Classify emails
+
+Run the classifier with default settings (checks 10 emails, classifies up to 10):
 ```bash
 python read_emails.py
 ```
 
-
-What you should see:
-- On first run: an OAuth browser flow, then the app prints that it’s authorized.
-- Terminal logs that show:
-  - Number of unread messages fetched
-  - For each email: subject, category, and label creation/application status
-  - A summary of processed messages and labels applied
-
-Example:
+With custom limits:
+```bash
+python read_emails.py --check 20 --classify 15
 ```
-Authenticating with Gmail...
-Token loaded from token.json
-Fetching unread messages...
-Processing: "Your invoice for July" -> Classified as "Finance"
-Label "Finance" found. Applying label...
-Processing: "GitHub: new issue in repo" -> Classified as "Github"
-Label "Github" not found. Creating label...
-Done. 8 messages processed, 8 labeled.
+
+### CLI Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--check N` | Total number of unread messages to check | 10 |
+| `--classify N` | Number of messages to classify | 10 |
+| `--recommend` | Recommend new categories based on untagged emails | - |
+
+### Get category recommendations
+
+Analyze your unread, untagged emails and get AI-suggested categories:
+```bash
+python read_emails.py --recommend
 ```
+
+This will:
+1. Fetch up to 50 unread emails that don't have any user labels
+2. Analyze them with the LLM
+3. Suggest up to 5 new categories (or confirm your current ones are sufficient)
+
+Example output:
+```
+🔍 Analyzing unread, untagged emails for category recommendations...
+Found 42 untagged emails to analyze.
+
+💡 Suggested new categories:
+   • Travel
+   • Shopping
+   • Newsletters
+
+📝 To add these, edit the CATEGORIES list in model_wrapper.py
+```
+
+## Running with Docker
+
+Build and run using Docker Compose:
+
+```bash
+# Build the image
+docker compose build
+
+# Run with default settings
+docker compose run gmail-organizer
+
+# Run with arguments
+docker compose run gmail-organizer --recommend
+docker compose run gmail-organizer --check 20 --classify 15
+```
+
+Note: Docker uses `host.docker.internal` to connect to Ollama running on your host machine. If Ollama is running elsewhere, modify the `OLLAMA_HOST` in `docker-compose.yml`.
 
 ## Customizing categories
 

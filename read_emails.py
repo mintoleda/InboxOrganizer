@@ -3,8 +3,51 @@ import base64
 import re
 from bs4 import BeautifulSoup
 from googleapiclient.errors import HttpError
-from model_wrapper import classify_email_with_llm
+from model_wrapper import classify_email_with_llm, suggest_new_categories, CATEGORIES
 import argparse
+
+
+def get_user_label_ids(service):
+    """Returns a set of user-created label IDs (excludes system labels)"""
+    results = service.users().labels().list(userId='me').execute()
+    labels = results.get('labels', [])
+    # System labels have type 'system', user labels have type 'user'
+    user_label_ids = {label['id'] for label in labels if label.get('type') == 'user'}
+    return user_label_ids
+
+
+def get_unread_untagged_messages(service, max_results=50):
+    """Returns unread messages that don't have any user-created labels"""
+    try:
+        response = service.users().messages().list(userId='me', q='is:unread', maxResults=max_results).execute()
+        messages = response.get('messages', [])
+        
+        if not messages:
+            return []
+        
+        user_label_ids = get_user_label_ids(service)
+        untagged = []
+        
+        for msg in messages:
+            message = service.users().messages().get(userId='me', id=msg['id'], format='metadata', metadataHeaders=['From', 'Subject']).execute()
+            existing_labels = set(message.get('labelIds', []))
+            
+            # Check if message has any user labels
+            if not existing_labels.intersection(user_label_ids):
+                headers = message['payload'].get('headers', [])
+                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+                sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), '(No Sender)')
+                untagged.append({
+                    'id': msg['id'],
+                    'subject': subject,
+                    'sender': sender
+                })
+        
+        return untagged
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return []
+
 
 def get_unread_messages(service, max_results=1):
     try:
@@ -85,9 +128,33 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Gmail AI Organizer")
     parser.add_argument("--check", type=int, default=10, help="Total number of unread messages to check")
     parser.add_argument("--classify", type=int, default=10, help="Number of unread messages to classify")
+    parser.add_argument("--recommend", action="store_true", help="Recommend new categories based on untagged emails")
     args = parser.parse_args()
 
     service = gmail_authenticate()
+
+    # Handle category recommendation mode
+    if args.recommend:
+        print("🔍 Analyzing unread, untagged emails for category recommendations...")
+        untagged = get_unread_untagged_messages(service, max_results=50)
+        
+        if not untagged:
+            print("No unread, untagged messages found.")
+        else:
+            print(f"Found {len(untagged)} untagged emails to analyze.\n")
+            suggestions = suggest_new_categories(untagged)
+            
+            if not suggestions:
+                print("✅ No new categories recommended. Your current categories seem sufficient:")
+                print(f"   Current: {', '.join(CATEGORIES)}")
+            else:
+                print("💡 Suggested new categories:")
+                for cat in suggestions:
+                    print(f"   • {cat}")
+                print(f"\n📝 To add these, edit the CATEGORIES list in model_wrapper.py")
+        exit(0)
+
+    # Regular classification mode
     unread = get_unread_messages(service, max_results=args.check)
 
     if not unread:
@@ -96,6 +163,7 @@ if __name__ == '__main__':
         print(f"Found {len(unread)} unread messages (checking up to {args.check}):\n")
         
         classified_count = 0
+        user_label_ids = get_user_label_ids(service)
 
         for msg in unread:
             if classified_count >= args.classify:
@@ -105,16 +173,10 @@ if __name__ == '__main__':
             # Get full message details (including labels)
             message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
 
-            existing_labels = message.get('labelIds', [])
+            existing_labels = set(message.get('labelIds', []))
 
-            # Define the AI labels you want to check for (case-insensitive)
-            ai_labels = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Programming"] # Example labels; change at your own whim
-            ai_label_ids = []
-
-            # Get the label IDs for the AI labels
-
-            # If any AI label ID is already in existing_labels, skip
-            if any(label_id in existing_labels for label_id in ai_label_ids):
+            # Skip if message already has any user-created label
+            if existing_labels.intersection(user_label_ids):
                 print(f"Skipping message {msg['id']} - already labeled")
                 continue
 
@@ -135,3 +197,4 @@ if __name__ == '__main__':
             classified_count += 1
 
             print("✅ Label applied!\n" + "-" * 40)
+

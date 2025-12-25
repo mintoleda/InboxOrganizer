@@ -1,0 +1,12 @@
+services:
+  gmail-organizer:
+    build: .
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+      - ./token.json:/app/token.json
+      
+    # Pass CLI arguments via command
+    # Example: docker compose run gmail-organizer --recommend
+    # Example: docker compose run gmail-organizer --check 20 --classify 10
