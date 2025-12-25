@@ -4,7 +4,7 @@ import os
 
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
 client = Client(host=OLLAMA_HOST)
-CATEGORIES = ["Work", "Finance", "Promotions", "Spam", "Github", "Programming"]
+CATEGORIES = ["Work", "Finance", "Promotions", "Spam"]
 
 
 def suggest_new_categories(email_samples: list[dict]) -> list[str]:
@@ -41,8 +41,13 @@ Return ONLY a comma-separated list of category names (e.g., "Travel, Shopping, N
         if result.upper() == "NONE" or not result:
             return []
 
-        categories = [cat.strip() for cat in result.split(",")]
-        categories = [re.sub(r"[^a-zA-Z0-9 ]", "", cat).strip().title() for cat in categories if cat.strip()]
+        raw_categories = [cat.strip() for cat in result.split(",")]
+        categories = []
+        for cat in raw_categories:
+            cleaned = re.sub(r"[^a-zA-Z0-9 ]", "", cat).strip().title()
+            # Only accept 1-2 word category names to filter out LLM rambling
+            if cleaned and len(cleaned.split()) <= 2:
+                categories.append(cleaned)
         return categories[:5]
 
     except Exception as e:
