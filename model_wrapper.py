@@ -2,7 +2,7 @@ from ollama import Client
 import re
 
 client = Client(host='http://localhost:11434')
-CATEGORIES = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Github", "Programming"]
+CATEGORIES = ["Work", "Finance", "Promotions", "Spam", "Github", "Programming"]
 
 def classify_email_with_llm(subject: str, body: str, sender: str) -> str:
     prompt = f"""

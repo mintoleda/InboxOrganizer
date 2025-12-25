@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 from googleapiclient.errors import HttpError
 from model_wrapper import classify_email_with_llm
+import argparse
 
 def get_unread_messages(service, max_results=1):
     try:
@@ -81,15 +82,26 @@ def get_or_create_label_id(service, label_name):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Gmail AI Organizer")
+    parser.add_argument("--check", type=int, default=10, help="Total number of unread messages to check")
+    parser.add_argument("--classify", type=int, default=10, help="Number of unread messages to classify")
+    args = parser.parse_args()
+
     service = gmail_authenticate()
-    unread = get_unread_messages(service)
+    unread = get_unread_messages(service, max_results=args.check)
 
     if not unread:
         print("No unread messages found.")
     else:
-        print(f"Found {len(unread)} unread messages:\n")
+        print(f"Found {len(unread)} unread messages (checking up to {args.check}):\n")
+        
+        classified_count = 0
 
         for msg in unread:
+            if classified_count >= args.classify:
+                print(f"Reached classification limit of {args.classify}. Stopping.")
+                break
+
             # Get full message details (including labels)
             message = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
 
@@ -106,7 +118,7 @@ if __name__ == '__main__':
                 print(f"Skipping message {msg['id']} - already labeled")
                 continue
 
-            print("Retrieving email content...")
+            print(f"[{classified_count + 1}/{args.classify}] Retrieving email content...")
             email = get_email_content(service, msg['id'])
             print("Classifying email...")
             label = classify_email_with_llm(email['subject'], email['body'], email['sender'])
@@ -119,5 +131,7 @@ if __name__ == '__main__':
             label_id = get_or_create_label_id(service, label)
 
             apply_label_to_email(service, email['id'], label_id)
+            
+            classified_count += 1
 
             print("✅ Label applied!\n" + "-" * 40)
