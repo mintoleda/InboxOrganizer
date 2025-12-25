@@ -4,7 +4,7 @@ import re
 client = Client(host='http://localhost:11434')
 CATEGORIES = ["Work", "Finance", "Promotions", "Spam", "Scholarships", "Github", "Programming"]
 
-def classify_email_with_gemma(subject: str, body: str, sender: str) -> str:
+def classify_email_with_llm(subject: str, body: str, sender: str) -> str:
     prompt = f"""
 You are a smart AI assistant that classifies emails into these categories:
 {', '.join(CATEGORIES)}.
@@ -20,7 +20,7 @@ Return only the category name.
 """
 
     try:
-        response = client.generate(model="mistral:7b", prompt=prompt)
+        response = client.generate(model="llama3.1:8b", prompt=prompt)
         label = response["response"].strip()
         label = re.sub(r"[^a-zA-Z]", "", label).capitalize()
 
@@ -29,5 +29,5 @@ Return only the category name.
 
         return label
     except Exception as e:
-        print("❌ Error calling Gemma:", e)
+        print("❌ Error calling LLM:", e)
         return "Uncategorized"

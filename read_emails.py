@@ -3,7 +3,7 @@ import base64
 import re
 from bs4 import BeautifulSoup
 from googleapiclient.errors import HttpError
-from gemma_wrapper import classify_email_with_gemma
+from model_wrapper import classify_email_with_llm
 
 def get_unread_messages(service, max_results=1):
     try:
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             print("Retrieving email content...")
             email = get_email_content(service, msg['id'])
             print("Classifying email...")
-            label = classify_email_with_gemma(email['subject'], email['body'], email['sender'])
+            label = classify_email_with_llm(email['subject'], email['body'], email['sender'])
             print("🔹 Subject:", email['subject'])
             print("👤 From:", email['sender'])
             print("🏷️ Suggested Label:", label)

@@ -10,9 +10,9 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 
 - Automatic Gmail authentication via OAuth2
 - Reads messages for classification
-- AI-powered email classification using a local LLM, which, by default, is Mistral 7B with Ollama
+- AI-powered email classification using a local LLM, which, by default, is Llama 3.1 8B with Ollama
 - Creates labels if missing and applies them
-- Customizable categories (see [gemma_wrapper.py](https://github.com/mintoleda/InboxOrganizer/blob/main/README.md#customizing-categories))
+- Customizable categories (see [model_wrapper.py](https://github.com/mintoleda/InboxOrganizer/blob/main/README.md#customizing-categories))
 - Runs fully locally (no external LLM API required)
 
 ## Tools used
@@ -20,7 +20,7 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 - Python
 - Gmail API (google-auth, google-auth-oauthlib, google-api-python-client)
 - Ollama
-- Mistral 7B (default)
+- Llama 3.1 8B (default)
 - BeautifulSoup (HTML parsing)
 
 ## How it works
@@ -52,12 +52,12 @@ This connects to your Gmail inbox, reads your unread emails, and automatically a
 2. Start the Ollama service (should run on http://localhost:11434).
 3. Pull the model used by this project:
    ```bash
-   ollama pull mistral
+   ollama pull llama3.1:8b
    ```
-  - You can use any model you'd like as long as you make sure to edit `gemma_wrapper.py`
+  - You can use any model you'd like as long as you make sure to edit `model_wrapper.py`
 4. (Optional) Test that the model runs:
    ```bash
-   ollama run mistral "Classify this email about a bank statement."
+   ollama run llama3.1:8b "Classify this email about a bank statement."
    ```
 
 ### 3) Set up the Python environment
@@ -101,7 +101,7 @@ If you ever need to re-authenticate, delete `token.json` and run the app again.
 
 Run the classifier:
 ```bash
-python main.py
+python read_emails.py
 ```
 
 
@@ -126,7 +126,7 @@ Done. 8 messages processed, 8 labeled.
 
 ## Customizing categories
 
-- The classification categories and prompts can be adjusted in `gemma_wrapper.py`. You can add, remove, or rename categories as needed.
+- The classification categories and prompts can be adjusted in `model_wrapper.py`. You can add, remove, or rename categories as needed.
 
 ## Privacy and safety
 
@@ -141,7 +141,7 @@ Done. 8 messages processed, 8 labeled.
   - Delete `token.json` to re-authenticate if needed.
 - Ollama/model not available:
   - Make sure the Ollama service is running (`ollama serve` if you run it manually).
-  - Pull the model: `ollama pull mistral`.
+  - Pull the model: `ollama pull llama3.1:8b`.
   - If running on a non-default host/port, set `OLLAMA_HOST`.
 - Gmail API permission errors:
   - Ensure the OAuth consent screen is configured and the Gmail API is enabled.
